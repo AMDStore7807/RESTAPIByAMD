@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rest Api By AMD STORE</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 1.2s ease-out;
+            transition: transform .5s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .arrow {
+            font-size: 1rem;
+            margin-left: 1px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Kelas rotate akan memutar panah 90 derajat, sehingga mengarah ke bawah */
+        .rotate {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+
+<body class="bg-success">
+    <!-- navbar start -->
+    <nav class="navbar bg-dark navbar-expand-lg bg-body-tertiary mb-4" data-bs-theme="dark">
+        <div class="container-fluid">
+            <a class="navbar-brand fs-3 fw-bold" href="#">AMD STORE</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+                aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+                <ul class="navbar-nav mx-auto p-2 mb-lg-0 ">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home <i class="fas fa-home"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://wa.me/6287789520953" target="_blank">Contact <i
+                                class="fas fa-address-book"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Pricing <i class="fas fa-tag"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://whatsapp.com/channel/0029Vb3UZp16rsQnjqZi1O31"
+                            target="_blank">Information <i class="fas fa-info"></i></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://chat.whatsapp.com/BceZZKOaN1T0RBknH1uF1w"
+                            target="_blank">Group WhatsApp <i class="fas fa-user-group"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link" data-bs-toggle="collapse" href=".collapse" role="button"
+                            aria-expanded="false" aria-controls="collapse">
+                            list API
+                        </a>
+                    </li>
+                </ul>
+                <span class="navbar-text">
+                    API By AMD STORE
+                </span>
+            </div>
+        </div>
+    </nav>
+    <!-- navbar end -->
+
+    <!-- main content -->
+    <div class="row m-1">
+        <!-- Card 1 -->
+        <div class="col-sm-12 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div class="card-body text-md-center">
+                    <h5 class="card-title">OrderKuota Gateway</h5>
+                    <p class="card-text">API Yang terhubung dengan aplikasi OrderKuota, untuk pembayaran otomatis</p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#OrderKuota" aria-expanded="false" aria-controls="OrderKuota">
+                            List Action <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="OrderKuota">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row">
+                                    <a href="https://api.storeamd.my.id/api/orkut/createpayment?apikey=&amount=&codeqr="
+                                        target="_blank" class="btn btn-primary col m-1">Create Payment</a>
+                                    <a href="https://api.storeamd.my.id/api/orkut/cekstatus?apikey=&merchant=&keyorkut="
+                                        target="_blank" class="btn btn-primary col m-1">Cek Status</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="col-sm-4 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div class="card-body text-md-center">
+                    <h5 class="card-title">Downloader</h5>
+                    <p class="card-text">API Yang terhubung ke berbagai platform yang bisa di gunakan untuk download</p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#Downloader" aria-expanded="false" aria-controls="Downloader">
+                            List Platform <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="Downloader">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row">
+                                    <a href="https://storeamd.my.id/api/download/tiktokdl?url=" target="_blank"
+                                        class="btn btn-primary col m-1">TikTok</a>
+                                    <a href="https://storeamd.my.id/api/download/fbdl?url="
+                                        class="btn btn-primary col m-1">Facebook</a>
+                                    <a href="https://storeamd.my.id/api/download/igdl?url="
+                                        class="btn btn-primary col m-1">Instagram</a>
+                                    <a href="https://storeamd.my.id/api/download/ytmp3?url="
+                                        class="btn btn-primary col m-1">YtMp3</a>
+                                    <a href="https://storeamd.my.id/api/download/ytmp4?url="
+                                        class="btn btn-primary col m-1">YtMp4</a>
+                                    <a href="#" class="btn btn-primary col m-1">CapCut</a>
+                                    <a href="#" class="btn btn-primary col m-1">Dood Stream</a>
+                                    <a href="#" class="btn btn-primary col m-1">Google Drive</a>
+                                    <a href="#" class="btn btn-primary col m-1">Pinterest Video</a>
+                                    <a href="#" class="btn btn-primary col m-1">Sound Cloud</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="col-sm-4 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div id="card-body" class="card-body text-md-center">
+                    <h5 class="card-title">Open Ai & GPT</h5>
+                    <p class="card-text">API Yang terhubung dengan platform AI, yang bisa di gunakan untuk search dll
+                    </p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#GPT" aria-expanded="false" aria-controls="GPT">
+                            List AI <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="GPT">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row-3">
+                                    <a href="#" class="btn btn-primary col m-1">Open AI</a>
+                                    <a href="#" class="btn btn-primary col m-1">GPT 4</a>
+                                    <a href="#" class="btn btn-primary col m-1">Gemini</a>
+                                    <a href="#" class="btn btn-primary col m-1">Open Ai Prompt</a>
+                                    <a href="#" class="btn btn-primary col m-1">GPT 3.5 Turbo</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="col-sm-4 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div id="card-body" class="card-body text-md-center">
+                    <h5 class="card-title">Tools & Search</h5>
+                    <p class="card-text">API Yang terhubung berbagai aplikasi dan web yang bisa digunakan untuk searc
+                        dll</p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#Tools" aria-expanded="false" aria-controls="Tools">
+                            List Action <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="Tools">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row">
+                                    <a href="#" class="btn btn-primary col m-1">Bstation</a>
+                                    <a href="#" class="btn btn-primary col m-1">Pinterest</a>
+                                    <a href="#" class="btn btn-primary col m-1">HappyMod</a>
+                                    <a href="#" class="btn btn-primary col m-1">Google Image</a>
+                                    <a href="#" class="btn btn-primary col m-1">Youtube Search</a>
+                                    <a href="#" class="btn btn-primary col m-1">Tiktok Search</a>
+                                    <a href="#" class="btn btn-primary col m-1">SfileMobi</a>
+                                    <a href="#" class="btn btn-primary col m-1">Lirics</a>
+                                    <a href="#" class="btn btn-primary col m-1">Remini</a>
+                                    <a href="#" class="btn btn-primary col m-1">Shortlink Tinyurl</a>
+                                    <a href="#" class="btn btn-primary col m-1">Shortlink Isgd</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 5 -->
+        <div class="col-sm-6 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div id="card-body" class="card-body text-md-center">
+                    <h5 class="card-title">Sosmed Stalking</h5>
+                    <p class="card-text">API Yang terhubung dengan platform aplikasi yang digunakan untuk stalk</p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#Sosmed" aria-expanded="false" aria-controls="Sosmed">
+                            List Stalk <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="Sosmed">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row">
+                                    <a href="#" class="btn btn-primary col m-1">TikTok Stalk</a>
+                                    <a href="#" class="btn btn-primary col m-1">Github Stalk</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 6 -->
+        <div class="col-sm-6 mb-4 mb-sm-2">
+            <div class="card">
+                <div class="card-header">
+                    Method: Get
+                </div>
+                <div id="card-body" class="card-body text-md-center">
+                    <h5 class="card-title">Image Creator</h5>
+                    <p class="card-text">API Yang bisa membuat image</p>
+                    <p class="d-inline-flex gap-1">
+                        <button id="" class="btn btn-primary btnArrow" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#ImageCreator" aria-expanded="false" aria-controls="ImageCreator">
+                            List Creator Image <i class="fas fa-arrow-right arrow" id="arrowIcon"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="ImageCreator">
+                        <div class="card card-body">
+                            <div class="container text-center">
+                                <div class="row">
+                                    <a href="#" class="btn btn-primary col m-1">Brat</a>
+                                    <a href="#" class="btn btn-primary col m-1">PornHub</a>
+                                    <a href="#" class="btn btn-primary col m-1">Quotely</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const toggleButtons = document.querySelectorAll('.btnArrow');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Cari ikon panah di dalam container yang sama dengan tombol
+                const arrow = button.parentElement.querySelector('.arrow');
+                arrow.classList.toggle('rotate');
+            });
+        });
+    </script>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/45cd3e82cf.js" crossorigin="anonymous"></script>
+</body>
+
+</html>
