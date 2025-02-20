@@ -103,6 +103,9 @@ app.get("/", (req, res) => {
 app.get("/dashboard.html", (req, res) => {
   res.sendFile(path.join(__dirname, "dashboard.html"));
 });
+app.get("/pricing.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "pricing.html"));
+});
 
 app.get("/api/ai/openai-prompt", async (req, res) => {
   const { prompt, msg } = req.query;
