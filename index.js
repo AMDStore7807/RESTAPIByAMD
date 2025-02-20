@@ -102,7 +102,7 @@ app.get('/api/orkut/cekstatus', async (req, res) => {
 
 
 app.get('/', (req, res) => {
-res.sendFile(path.join(__dirname, 'dashboard.html'));
+res.sendFile(path.join(__dirname, 'index.html'));
 })
 
 
