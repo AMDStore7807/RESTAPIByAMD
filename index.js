@@ -50,17 +50,25 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "function")));
 app.use(bodyParser.raw({ limit: "50mb", type: "*/*" }));
 
+function isApiKeyValid(inputKey) {
+  const keyObj = global.apikey.find((item) => item.key === inputKey);
+  if (!keyObj) return false;
+  if (keyObj.permanent) return true;
+  if (keyObj.expiresAt && Date.now() <= keyObj.expiresAt) return true;
+  return false;
+}
+
 app.get("/api/orkut/createpayment", async (req, res) => {
-  const { apikey, amount } = req.query;
+  const { apikey, amount, codeqr } = req.query;
   if (!apikey) {
     return res.json("Isi Parameter Apikey.");
   }
-  const check = global.apikey;
-  if (!check.includes(apikey)) return res.json("Apikey Tidak Valid!.");
+  if (!isApiKeyValid(apikey)) {
+    return res.json("Apikey Tidak Valid!.");
+  }
   if (!amount) {
     return res.json("Isi Parameter Amount.");
   }
-  const { codeqr } = req.query;
   if (!codeqr) {
     return res.json("Isi Parameter CodeQr menggunakan qris code kalian.");
   }
@@ -97,18 +105,7 @@ app.get("/api/orkut/cekstatus", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-app.get("/index.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-app.get("/dashboard.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "dashboard.html"));
-});
-app.get("/pricing.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "pricing.html"));
-});
+app.use(express.static('public'));
 
 app.get("/api/ai/openai-prompt", async (req, res) => {
   const { prompt, msg } = req.query;
