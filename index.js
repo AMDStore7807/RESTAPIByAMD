@@ -107,6 +107,11 @@ app.get("/api/orkut/cekstatus", async (req, res) => {
 
 app.use(express.static('public'));
 
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
+
+
 app.get("/api/ai/openai-prompt", async (req, res) => {
   const { prompt, msg } = req.query;
   if (!prompt || !msg) return res.json("Isi Parameternya!");
