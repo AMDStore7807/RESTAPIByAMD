@@ -132,6 +132,72 @@ app.get("/api/ai/openai-prompt", async (req, res) => {
   }
 });
 
+app.get("/search", (req, res) => {
+  const query = req.query.q;
+
+  if (!query) {
+    return res
+      .status(400)
+      .json({ error: "Silahkan isi apikey yang ingin di cari" });
+  }
+  const now = new Date();
+
+  const results = global.apikey.filter((item) => {
+    if (item.key.toLowerCase() !== query.toLowerCase()) return false;
+
+    if (item.expired === "permanent") return true;
+
+    if (!item.createdAt) return false;
+
+    const duration = global.expiryDurations[item.expired];
+    if (!duration) return false;
+
+    const expirationDate = new Date(
+      new Date(item.createdAt).getTime() + duration
+    );
+
+    return now < expirationDate;
+  });
+
+  const detailedResults = results.map((item) => {
+    if (item.expired !== "permanent") {
+      const duration = global.expiryDurations[item.expired];
+      const expirationDate = new Date(
+        new Date(item.createdAt).getTime() + duration
+      );
+      const remainingTimeMs = expirationDate.getTime() - now.getTime();
+
+      const remainingSeconds = Math.floor(remainingTimeMs / 1000);
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+      const seconds = remainingTimeMs % 60;
+      const remainingTimeFormatted = `${hours}h ${minutes}m ${seconds}s`;
+
+      return {
+        key: item.key,
+        status: "active",
+        remainingTime: remainingTimeFormatted,
+      };
+    } else {
+      return {
+        key: item.key,
+        status: "active",
+        remainingTime: "permanent",
+      };
+    }
+  });
+
+  res.json({
+    query,
+    count: detailedResults.length,
+    results: detailedResults,
+    message:
+      detailedResults.length > 0
+        ? "Hasil pencarian ditemukan. Silahkan gunakan apikey"
+        : "Maaf, tidak ada apikey yang cocok. Beli apikey dengan klik Buy API",
+  });
+});
+
 app.get("/api/ai/openai", async (req, res) => {
   const { msg } = req.query;
   if (!msg) return res.json("Isi Parameternya!");
