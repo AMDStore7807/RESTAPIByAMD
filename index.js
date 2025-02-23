@@ -105,12 +105,7 @@ app.get("/api/orkut/cekstatus", async (req, res) => {
   }
 });
 
-app.use(express.static('public'));
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
-
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/ai/openai-prompt", async (req, res) => {
   const { prompt, msg } = req.query;
