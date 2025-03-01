@@ -224,6 +224,13 @@ app.get("/search", async (req, res) => {
 
 app.get("/api/ai/simsimi", async (req, res) => {
   const { text, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   const language = req.query.language || "id";
 
   if (!text) {
