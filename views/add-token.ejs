@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Add Token Manual</title>
+</head>
+
+<body>
+  <h1>Add Token Manual</h1>
+  <% if (error) { %>
+    <p style="color: red;">
+      <%= error %>
+    </p>
+    <% } %>
+      <% if (success) { %>
+        <p style="color: green;">
+          <%= success %>
+        </p>
+        <% } %>
+          <form action="/admin/add-token" method="POST">
+            <label for="token">Token:</label>
+            <input type="text" name="token" id="token" required>
+            <br>
+            <label for="expires_in">Masa berlaku (detik):</label>
+            <input type="number" name="expires_in" id="expires_in" value="86400">
+            <br>
+            <label for="permanent">Buat Token Permanent?</label>
+            <input type="checkbox" name="permanent" id="permanent" value="true">
+            <br>
+            <button type="submit">Tambahkan Token</button>
+          </form>
+          <a href="/admin/dashboard">Kembali ke Dashboard</a>
+
+          <script>
+            document.getElementById("permanent").addEventListener("change", function () {
+              const expiresInput = document.getElementById("expires_in");
+              if (this.checked) {
+                expiresInput.disabled = true;
+                expiresInput.value = "";
+              } else {
+                expiresInput.disabled = false;
+                expiresInput.value = "86400";
+              }
+            });
+          </script>
+
+</body>
+
+</html>

@@ -107,7 +107,7 @@
                     </li>
                     <form id="searchForm" class="d-flex" role="search">
                         <input class="form-control me-2" type="search" placeholder="Cek Token" aria-label="Search"
-                            name="q">
+                            name="token">
                         <button class="btn btn-outline-success" type="submit">CEK</button>
                     </form>
 
@@ -148,46 +148,55 @@
     <script>
         document.getElementById("searchForm").addEventListener("submit", function (e) {
             e.preventDefault();
-            const query = this.q.value;
-            const queryValue = this.q.value.trim();
-            if (!queryValue) {
+            const tokenInput = this.token.value;
+            const tokenValue = tokenInput.trim();
+
+            if (!tokenValue) {
                 document.getElementById("staticBackdropLabel").textContent = "PERHATIAN!!!";
                 const modalBody = document.querySelector('#staticBackdrop .modal-body');
                 modalBody.innerHTML = `
-                <p><strong>HARAP MASUKKAN APIKEY YANG INGIN DI CEK</strong></p>
-                `
+      <p><strong>HARAP MASUKKAN TOKEN YANG INGIN DI CEK</strong></p>
+    `;
                 const modal = new bootstrap.Modal(document.getElementById('staticBackdrop'));
                 modal.show();
                 return;
             }
 
-            fetch(`/search?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            // Panggil endpoint pencarian token
+            fetch(`/search?token=${encodeURIComponent(tokenValue)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || "Token tidak ditemukan.");
+                        });
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    console.log(data);
                     const modalBody = document.querySelector('#staticBackdrop .modal-body');
                     if (modalBody) {
                         document.getElementById("staticBackdropLabel").textContent = "Hasil Pencarian";
                         modalBody.innerHTML = `
-        <p><strong>Hasil Pencarian Dari:</strong> ${data.query}</p>
-        <div class="container text-center">
-        <table class="table">
-        <thead>
-            <tr>
-            <th scope="col">APIKEY</th>
-            <th scope="col">Status</th>
-            <th scope="col">EXP</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-            <td>${data.results[0].key}</td>
-            <td>${data.results[0].status}</td>
-            <td>${data.results[0].remainingTime}</td>
-            </tr>
-        </tbody>
-        </table>
-        <p>${data.message}</p>
+          <p><strong>Hasil Pencarian Untuk Token:</strong> ${data.query}</p>
+          <div class="container text-center">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">TOKEN</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">EXP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${data.token}</td>
+                  <td>${data.status}</td>
+                  <td>${data.remainingTime}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>${data.message}</p>
+          </div>
         `;
                     } else {
                         console.error("Modal body tidak ditemukan.");
@@ -196,18 +205,14 @@
                     modal.show();
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     const modalBody = document.querySelector('#staticBackdrop .modal-body');
-
                     if (modalBody) {
-                        modalBody.innerHTML = `<p>Terjadi kesalahan saat pencarian.</p>`;
+                        modalBody.innerHTML = `<p><strong>${error.message}</strong></p>`;
                     }
                     const modal = new bootstrap.Modal(document.getElementById('staticBackdrop'));
                     modal.show();
                 });
         });
-
-
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Extend Token</title>
+</head>
+
+<body>
+    <h1>Extend Token</h1>
+    <% if (error) { %>
+        <p style="color: red;">
+            <%= error %>
+        </p>
+        <% } %>
+            <% if (success) { %>
+                <p style="color: green;">
+                    <%= success %>
+                </p>
+                <% } %>
+                    <form action="/admin/extend-token" method="POST">
+                        <label for="token">Token:</label>
+                        <input type="text" name="token" id="token" required>
+                        <br>
+                        <label for="additionalSeconds">Tambahkan (detik):</label>
+                        <input type="number" name="additionalSeconds" id="additionalSeconds" required>
+                        <br>
+                        <label for="permanent">Buat Token Permanent?</label>
+                        <input type="checkbox" name="permanent" id="permanent" value="true">
+                        <br>
+                        <button type="submit">Extend Token</button>
+                    </form>
+                    <br>
+                    <a href="/admin/dashboard">Kembali ke Dashboard</a>
+</body>
+
+</html>

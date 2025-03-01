@@ -1,4 +1,5 @@
 require("./settings.js");
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -7,6 +8,7 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const axios = require("axios");
+const session = require("express-session");
 const { getBuffer, fetchJson } = require("./function/function.js");
 const { groq } = require("./function/openai.js");
 const { stalk } = require("node-tiklydown");
@@ -15,6 +17,7 @@ const fetch = require("node-fetch");
 const { BSearch } = require("./function/bstation.js");
 const { doodS } = require("./function/doodstream.js");
 const { ttSearch } = require("./function/tiktoksearch.js");
+const { simtalk } = require("./function/simsimi.js");
 const { souncloudDl } = require("./function/soundcloud.js");
 const { lirikLagu } = require("./function/liriklagu.js");
 const { ephoto } = require("./function/pornhub.js");
@@ -50,25 +53,47 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "function")));
 app.use(bodyParser.raw({ limit: "50mb", type: "*/*" }));
 
-function isApiKeyValid(inputKey) {
-  const keyObj = global.apikey.find((item) => item.key === inputKey);
-  if (!keyObj) return false;
-  if (keyObj.permanent) return true;
-  if (keyObj.expiresAt && Date.now() <= keyObj.expiresAt) return true;
-  return false;
+const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY;
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+const TokenManager = require("./function/tokenManager");
+const tokenManager = new TokenManager();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(
+  session({
+    secret: "sessionsecret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+function isAuthenticated(req, res, next) {
+  if (req.session && req.session.isAdmin) {
+    return next();
+  } else {
+    res.redirect("/admin/login");
+  }
 }
 
 app.get("/api/orkut/createpayment", async (req, res) => {
-  const { apikey, amount, codeqr } = req.query;
-  if (!apikey) {
-    return res.json("Isi Parameter Apikey.");
+  const { token, amount, codeqr } = req.query;
+
+  if (!token) {
+    return res.json("Isi Parameter Token.");
   }
-  if (!isApiKeyValid(apikey)) {
-    return res.json("Apikey Tidak Valid!.");
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
   }
+
   if (!amount) {
     return res.json("Isi Parameter Amount.");
   }
+
   if (!codeqr) {
     return res.json("Isi Parameter CodeQr menggunakan qris code kalian.");
   }
@@ -81,7 +106,14 @@ app.get("/api/orkut/createpayment", async (req, res) => {
 });
 
 app.get("/api/orkut/cekstatus", async (req, res) => {
-  const { merchant, keyorkut } = req.query;
+  const { token, merchant, keyorkut } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!merchant) {
     return res.json("Isi Parameter Merchant.");
   }
@@ -108,7 +140,14 @@ app.get("/api/orkut/cekstatus", async (req, res) => {
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/ai/openai-prompt", async (req, res) => {
-  const { prompt, msg } = req.query;
+  const { token, prompt, msg } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!prompt || !msg) return res.json("Isi Parameternya!");
 
   try {
@@ -132,74 +171,88 @@ app.get("/api/ai/openai-prompt", async (req, res) => {
   }
 });
 
-app.get("/search", (req, res) => {
-  const query = req.query.q;
-
-  if (!query) {
+app.get("/search", async (req, res) => {
+  const tokenQuery = req.query.token;
+  if (!tokenQuery) {
     return res
       .status(400)
-      .json({ error: "Silahkan isi apikey yang ingin di cari" });
+      .json({ error: "Silahkan isi token yang ingin dicek" });
   }
-  const now = new Date();
 
-  const results = global.apikey.filter((item) => {
-    if (item.key.toLowerCase() !== query.toLowerCase()) return false;
-
-    if (item.expired === "permanent") return true;
-
-    if (!item.createdAt) return false;
-
-    const duration = global.expiryDurations[item.expired];
-    if (!duration) return false;
-
-    const expirationDate = new Date(
-      new Date(item.createdAt).getTime() + duration
-    );
-
-    return now < expirationDate;
-  });
-
-  const detailedResults = results.map((item) => {
-    if (item.expired !== "permanent") {
-      const duration = global.expiryDurations[item.expired];
-      const expirationDate = new Date(
-        new Date(item.createdAt).getTime() + duration
-      );
-      const remainingTimeMs = expirationDate.getTime() - now.getTime();
-
-      const remainingSeconds = Math.floor(remainingTimeMs / 1000);
-      const hours = Math.floor(remainingSeconds / 3600);
-      const minutes = Math.floor((remainingSeconds % 3600) / 60);
-      const seconds = remainingTimeMs % 60;
-      const remainingTimeFormatted = `${hours}h ${minutes}m ${seconds}s`;
-
-      return {
-        key: item.key,
-        status: "active",
-        remainingTime: remainingTimeFormatted,
-      };
-    } else {
-      return {
-        key: item.key,
-        status: "active",
-        remainingTime: "permanent",
-      };
+  try {
+    const valid = await tokenManager.checkToken(tokenQuery);
+    const tokenInfo = await tokenManager.getTokenInfo(tokenQuery);
+    if (!tokenInfo) {
+      return res.status(404).json({ error: "Token tidak ditemukan" });
     }
-  });
 
-  res.json({
-    query,
-    count: detailedResults.length,
-    results: detailedResults,
-    message:
-      detailedResults.length > 0
-        ? "Hasil pencarian ditemukan. Silahkan gunakan apikey"
-        : "Maaf, tidak ada apikey yang cocok. Beli apikey dengan klik Buy API",
-  });
+    let remainingTime = "";
+    if (!tokenInfo.activated_at) {
+      remainingTime = "Permanent";
+    } else if (tokenInfo.expires_at) {
+      const now = new Date();
+      const expiresAt = new Date(tokenInfo.expires_at);
+      if (now > expiresAt) {
+        remainingTime = "Token kadaluarsa";
+      } else {
+        const remainingTimeMs = expiresAt.getTime() - now.getTime();
+        const remainingSeconds = Math.floor(remainingTimeMs / 1000);
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.floor((remainingSeconds % 3600) / 60);
+        const seconds = remainingSeconds % 60;
+        remainingTime = `${hours}h ${minutes}m ${seconds}s`;
+      }
+    } else {
+      remainingTime = tokenInfo.expires_in
+        ? tokenInfo.expires_in.toString() + " detik"
+        : "N/A";
+    }
+
+    res.json({
+      query: tokenQuery,
+      token: tokenInfo.token,
+      status: valid ? "aktif" : "tidak aktif",
+      remainingTime,
+      message: valid
+        ? "Token valid dan telah diaktifkan."
+        : "Token tidak valid atau sudah kadaluarsa.",
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/ai/simsimi", async (req, res) => {
+  const { text, token } = req.query;
+  const language = req.query.language || "id";
+
+  if (!text) {
+    return res.status(400).json({ error: "Text is required" });
+  }
+
+  try {
+    const response = await simtalk(text, language);
+    res.json({
+      creator: global.creator,
+      message: response.message,
+      text: response.text,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Failed to fetch response from SimSimi.",
+    });
+  }
 });
 
 app.get("/api/ai/openai", async (req, res) => {
-  const { msg } = req.query;
+  const { msg, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!msg) return res.json("Isi Parameternya!");
 
   try {
@@ -224,7 +277,14 @@ app.get("/api/ai/openai", async (req, res) => {
 });
 
 app.get("/api/ai/gpt4", async (req, res) => {
-  const { text } = req.query;
+  const { text, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!text) return res.json("Isi Parameternya!");
 
   try {
@@ -249,7 +309,14 @@ app.get("/api/ai/gpt4", async (req, res) => {
 });
 
 app.get("/api/ai/gpt-3-5-turbo", async (req, res) => {
-  const { text } = req.query;
+  const { text, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!text) return res.json("Isi Parameternya!");
 
   try {
@@ -274,7 +341,14 @@ app.get("/api/ai/gpt-3-5-turbo", async (req, res) => {
 });
 
 app.get("/api/ai/gemini", async (req, res) => {
-  const { text } = req.query;
+  const { text, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!text) return res.json("Isi Parameternya!");
 
   try {
@@ -310,7 +384,14 @@ app.get("/api/ai/gemini", async (req, res) => {
 });
 
 app.get("/api/download/fbdl", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -327,7 +408,14 @@ app.get("/api/download/fbdl", async (req, res) => {
 });
 
 app.get("/api/download/igdl", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -340,7 +428,14 @@ app.get("/api/download/igdl", async (req, res) => {
 });
 
 app.get("/api/download/tiktokdl", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -358,7 +453,14 @@ app.get("/api/download/tiktokdl", async (req, res) => {
 });
 
 app.get("/api/download/ytmp3", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -377,7 +479,14 @@ app.get("/api/download/ytmp3", async (req, res) => {
 });
 
 app.get("/api/download/ytmp4", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -396,7 +505,14 @@ app.get("/api/download/ytmp4", async (req, res) => {
 });
 
 app.get("/api/download/doodstream", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -414,7 +530,14 @@ app.get("/api/download/doodstream", async (req, res) => {
 });
 
 app.get("/api/download/soundcloud", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -431,7 +554,14 @@ app.get("/api/download/soundcloud", async (req, res) => {
 });
 
 app.get("/api/download/gdrive", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -448,7 +578,14 @@ app.get("/api/download/gdrive", async (req, res) => {
 });
 
 app.get("/api/download/pindlvid", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -465,7 +602,14 @@ app.get("/api/download/pindlvid", async (req, res) => {
 });
 
 app.get("/api/download/capcut", async (req, res) => {
-  const { url } = req.query;
+  const { url, token } = req.query;
+  if (!token) {
+    return res.json("Isi Parameter Token.");
+  }
+  const valid = await tokenManager.checkToken(token);
+  if (!valid) {
+    return res.json("Token tidak valid atau kadaluarsa.");
+  }
   if (!url) return res.json("Isi Parameternya!");
 
   try {
@@ -483,7 +627,14 @@ app.get("/api/download/capcut", async (req, res) => {
 
 app.get("/api/tools/remini", async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!url) return res.json("Isi Parameternya!");
     const image = await getBuffer(url);
     if (!image) res.json("Error!");
@@ -498,7 +649,14 @@ app.get("/api/tools/remini", async (req, res) => {
 
 app.get("/api/tools/bratgenerator", async (req, res) => {
   try {
-    const { text } = req.query;
+    const { text, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!text) return res.json("Isi Parameternya!");
     const image = await getBuffer(
       `https://brat.caliphdev.com/api/brat?text=${text}`
@@ -514,7 +672,14 @@ app.get("/api/tools/bratgenerator", async (req, res) => {
 
 app.get("/api/tools/tinyurl", async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!url) return res.json("Isi Parameternya!");
     if (!url.startsWith("https://")) res.json("Link tautan tidak valid!");
     const result = await shortUrl(url);
@@ -532,7 +697,14 @@ app.get("/api/tools/tinyurl", async (req, res) => {
 
 app.get("/api/tools/isgd", async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!url) return res.json("Isi Parameternya!");
     if (!url.startsWith("https://")) res.json("Link tautan tidak valid!");
     const result = await shortUrl2(url);
@@ -550,7 +722,14 @@ app.get("/api/tools/isgd", async (req, res) => {
 
 app.get("/api/tools/tiktokstalk", async (req, res) => {
   try {
-    const { user } = req.query;
+    const { user, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!user) return res.json("Isi Parameternya!");
     const result = await stalk(user).then((res) => res.data);
     if (!result) return res.json("Error!");
@@ -576,7 +755,14 @@ app.get("/api/tools/tiktokstalk", async (req, res) => {
 
 app.get("/api/tools/githubstalk", async (req, res) => {
   try {
-    const { user } = req.query;
+    const { user, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!user) return res.json("Isi Parameternya!");
     const result = await githubstalk(user).then((res) => res);
     if (!result) return res.json("Error!");
@@ -593,7 +779,14 @@ app.get("/api/tools/githubstalk", async (req, res) => {
 
 app.post("/api/tools/upload", async (req, res) => {
   try {
-    const image = req.body;
+    const { image, token } = req.body;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!image) return res.send("POST METHOD!");
     const result = await uploaderImg(image);
     if (!result.status) return res.send("Image Tidak Ditemukan!");
@@ -606,6 +799,14 @@ app.post("/api/tools/upload", async (req, res) => {
 
 app.get("/api/pterodactyl/listpanel", async (req, res) => {
   try {
+    const tokenParam = req.query.token;
+    if (!tokenParam) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(tokenParam);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     let { egg, nestid, loc, domain, ptla, ptlc } = req.query;
     if (!egg || !nestid || !loc || !domain || !ptla || !ptlc)
       return res.json("Isi Parameternya!");
@@ -676,7 +877,14 @@ app.get("/api/pterodactyl/listpanel", async (req, res) => {
 
 app.get("/api/search/pinterest", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await pinterest2(q);
     if (!result) return res.json("Error!");
@@ -693,7 +901,14 @@ app.get("/api/search/pinterest", async (req, res) => {
 
 app.get("/api/search/bstation", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await BSearch(q);
     if (!result) return res.json("Error!");
@@ -710,7 +925,14 @@ app.get("/api/search/bstation", async (req, res) => {
 
 app.get("/api/search/sfile", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     let result = await scp.search.sfile(q);
     if (!result) return res.json("Error!");
@@ -727,7 +949,14 @@ app.get("/api/search/sfile", async (req, res) => {
 
 app.get("/api/search/happymod", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     let result = await scp.search.happymod(q);
     result = result.result.map((e) => {
@@ -747,7 +976,14 @@ app.get("/api/search/happymod", async (req, res) => {
 
 app.get("/api/search/gimage", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await googleImage(q);
     if (!result) return res.json("Error!");
@@ -764,7 +1000,14 @@ app.get("/api/search/gimage", async (req, res) => {
 
 app.get("/api/search/ytsearch", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await Search(q);
     if (!result) return res.json("Error!");
@@ -781,7 +1024,14 @@ app.get("/api/search/ytsearch", async (req, res) => {
 
 app.get("/api/search/tiktoksearch", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await ttSearch(q);
     if (!result) return res.json("Error!");
@@ -798,7 +1048,14 @@ app.get("/api/search/tiktoksearch", async (req, res) => {
 
 app.get("/api/search/lyrics", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!q) return res.json("Isi Parameternya!");
     const result = await lirikLagu(q);
     if (!result) return res.json("Error!");
@@ -832,7 +1089,14 @@ app.get("/api/imagecreator/pornhub", async (req, res) => {
 
 app.get("/api/imagecreator/qc", async (req, res) => {
   try {
-    const { text, fotoUrl, nama } = req.query;
+    const { text, fotoUrl, nama, token } = req.query;
+    if (!token) {
+      return res.json("Isi Parameter Token.");
+    }
+    const valid = await tokenManager.checkToken(token);
+    if (!valid) {
+      return res.json("Token tidak valid atau kadaluarsa.");
+    }
     if (!text || !nama || !fotoUrl) return res.json("Isi Parameternya!");
     const json = {
       type: "quote",
@@ -871,6 +1135,158 @@ app.get("/api/imagecreator/qc", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.send(error);
+  }
+});
+
+app.get("/admin/login", (req, res) => {
+  res.render("login", { error: null });
+});
+
+app.post("/admin/login", (req, res) => {
+  const { secret } = req.body;
+  if (secret === ADMIN_SECRET_KEY) {
+    req.session.isAdmin = true;
+    res.redirect("/admin/dashboard");
+  } else {
+    res.render("login", { error: "Secret key tidak valid!" });
+  }
+});
+
+app.get("/admin/dashboard", isAuthenticated, (req, res) => {
+  res.render("dashboard");
+});
+
+app.get("/admin/add-token", isAuthenticated, (req, res) => {
+  res.render("add-token", { error: null, success: null });
+});
+
+app.post("/admin/add-token", isAuthenticated, async (req, res) => {
+  const { token, expires_in, permanent } = req.body;
+  const now = new Date();
+
+  // Siapkan data token
+  let tokenRecord = {
+    token: token,
+    created_at: now.toISOString(),
+    activated_at: null,
+  };
+
+  if (permanent === "true") {
+    tokenRecord.permanent = true;
+  } else {
+    tokenRecord.expires_in = parseInt(expires_in) || 86400;
+    tokenRecord.expires_at = null;
+  }
+
+  const { error } = await tokenManager.supabase
+    .from("tokens")
+    .insert([tokenRecord]);
+  if (error) {
+    return res.render("add-token", {
+      error: "Gagal menambahkan token.",
+      success: null,
+    });
+  }
+  res.render("add-token", {
+    success: "Token berhasil ditambahkan!",
+    error: null,
+  });
+});
+
+app.get("/admin/generate-token", isAuthenticated, (req, res) => {
+  res.render("generate-token", { error: null, success: null });
+});
+
+app.post("/admin/generate-token", isAuthenticated, async (req, res) => {
+  const { expiresIn, permanent } = req.body;
+  let tokenStr;
+  if (permanent === "true") {
+    tokenStr = await tokenManager.generateToken({ permanent: true });
+  } else {
+    tokenStr = await tokenManager.generateToken({
+      expiresIn: parseInt(expiresIn) || 86400,
+    });
+  }
+
+  if (tokenStr) {
+    res.render("generate-token", {
+      success: `Token dihasilkan: ${tokenStr}`,
+      error: null,
+    });
+  } else {
+    res.render("generate-token", {
+      error: `Error saat generate token.`,
+      success: null,
+    });
+  }
+});
+
+app.get("/admin/extend-token", isAuthenticated, (req, res) => {
+  res.render("extend-token", { error: null, success: null });
+});
+
+app.post("/admin/extend-token", isAuthenticated, async (req, res) => {
+  const { token, additionalSeconds, permanent } = req.body;
+
+  if (permanent === "true") {
+    const { error } = await tokenManager.supabase
+      .from("tokens")
+      .update({
+        permanent: true,
+        expires_in: null,
+        expires_at: null,
+      })
+      .eq("token", token);
+
+    if (error) {
+      return res.render("extend-token", {
+        error: "Gagal mengubah token menjadi permanent.",
+        success: null,
+      });
+    }
+    return res.render("extend-token", {
+      success: "Token berhasil diubah menjadi permanent.",
+      error: null,
+    });
+  } else {
+    const success = await tokenManager.extendToken(
+      token,
+      parseInt(additionalSeconds)
+    );
+    if (success) {
+      res.render("extend-token", {
+        success: "Token berhasil diperpanjang.",
+        error: null,
+      });
+    } else {
+      res.render("extend-token", {
+        error: "Gagal memperpanjang token.",
+        success: null,
+      });
+    }
+  }
+});
+
+app.get("/admin/tokens", isAuthenticated, async (req, res) => {
+  const { data, error } = await tokenManager.supabase
+    .from("tokens")
+    .select("*");
+  if (error) {
+    return res.render("tokens", {
+      error: "Error mengambil data token.",
+      tokens: [],
+    });
+  }
+  res.render("tokens", { tokens: data, error: null });
+});
+
+app.post("/admin/delete-token", isAuthenticated, async (req, res) => {
+  const { token } = req.body;
+  const success = await tokenManager.deleteToken(token);
+  if (success) {
+    res.redirect("/admin/tokens");
+  } else {
+    res.send("Error saat menghapus token.");
   }
 });
 

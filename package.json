@@ -7,6 +7,7 @@
     "start": "nodemon index.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "@vreden/youtube_scraper": "^1.2.4",
     "async-g-i-s": "^1.5.5",
     "axios": "^1.7.7",
@@ -15,7 +16,10 @@
     "cheerio": "^1.0.0-rc.10",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
+    "express-session": "^1.18.1",
     "fb-downloader-scrapper": "^2.0.0",
     "form-data": "^4.0.1",
     "fs": "^0.0.1-security",

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Semua Tokens</title>
+</head>
+<style>
+    table,
+    th,
+    td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 8px;
+    }
+</style>
+
+<body>
+    <h1>Daftar Semua Token</h1>
+    <% if (error) { %>
+        <p style="color: red;">
+            <%= error %>
+        </p>
+        <% } %>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <table>
+                    <tr>
+                        <th>Token</th>
+                        <th>Created At</th>
+                        <th>Activated At</th>
+                        <th>Expires In</th>
+                        <th>Expires At</th>
+                        <th>Permanent</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                    <% tokens.forEach(function(token) { %>
+                        <tr>
+                            <td>
+                                <%= token.token %>
+                            </td>
+                            <td>
+                                <%= token.created_at %>
+                            </td>
+                            <td>
+                                <%= token.activated_at ? token.activated_at : "-" %>
+                            </td>
+                            <td>
+                                <% if(token.permanent) { %>
+                                    Permanent
+                                    <% } else { %>
+                                        <%= token.expires_in %>
+                                            <% } %>
+                            </td>
+                            <td>
+                                <% if(token.permanent) { %>
+                                    Permanent
+                                    <% } else { %>
+                                        <%= token.expires_at ? token.expires_at : "-" %>
+                                            <% } %>
+                            </td>
+                            <td>
+                                <%= token.permanent ? "Yes" : "No" %>
+                            </td>
+                            <td>
+                                <% let status="" ; if(token.permanent) { status="Active" ; } else if(token.expires_at) {
+                                    let now=new Date(); let exp=new Date(token.expires_at); status=now> exp ?
+                                    "Expired" : "Active";
+                                    } else {
+                                    status = "Unknown";
+                                    }
+                                    %>
+                                    <%= status %>
+                            </td>
+
+                            <td>
+                                <form action="/admin/delete-token" method="POST" style="display:inline;">
+                                    <input type="hidden" name="token" value="<%= token.token %>">
+                                    <button type="submit">delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }); %>
+                </table>
+
+                <br>
+                <a href="/admin/dashboard">Kembali ke Dashboard</a>
+</body>
+
+</html>
