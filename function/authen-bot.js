@@ -35,6 +35,7 @@ async function authenBotHandler(req, res) {
     }
 
     const response = {
+      USERNAME: data.USERNAME,
       OWNER: data.OWNER,
       EMAIL: data.EMAIL,
       ACCESS: data.ACCESS,
