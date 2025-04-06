@@ -6,7 +6,7 @@ const path = require("path");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const app = express();
-const { authenBotHandler } = require('./function/authen-bot'); 
+const { authenBotHandler } = require("./function/authen-bot");
 const PORT = process.env.PORT || 5000;
 const axios = require("axios");
 const session = require("express-session");
@@ -106,7 +106,6 @@ app.get("/api/orkut/createpayment", async (req, res) => {
   }
 });
 
-
 app.get("/api/orkut/cekstatus", async (req, res) => {
   const { token, merchant, keyorkut } = req.query;
   if (!token) {
@@ -172,8 +171,6 @@ app.get("/api/ai/openai-prompt", async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching data." });
   }
 });
-
-
 
 app.get("/search", async (req, res) => {
   const tokenQuery = req.query.token;
@@ -254,7 +251,7 @@ app.get("/api/ai/simsimi", async (req, res) => {
     });
   }
 });
-app.post('/api/login/zayzynbot/login', authenBotHandler);
+app.post("/api/zayzynbot/login", authenBotHandler);
 
 app.get("/api/ai/openai", async (req, res) => {
   const { msg, token } = req.query;
@@ -1155,7 +1152,7 @@ app.get("/admin/login", (req, res) => {
 });
 
 app.post("/admin/login", (req, res) => {
-  const { username,password } = req.body;
+  const { username, password } = req.body;
   if (username === ADMIN_SECRET_KEY) {
     req.session.isAdmin = true;
     res.redirect("/admin/dashboard");
