@@ -2,47 +2,51 @@
 <html>
 
 <head>
-  <title>Generate Token</title>
+    <title>Generate Token</title>
 </head>
 
 <body>
-  <h1>Generate Token</h1>
+    <h1>Generate Token</h1>
 
-  <% if (error) { %>
-    <p style="color: red;"><%= error %></p>
-  <% } %>
+    <% if (error) { %>
+        <p style="color: red;">
+            <%= error %>
+        </p>
+        <% } %>
 
-  <% if (success) { %>
-    <p style="color: green;"><%= success %></p>
-  <% } %>
+            <% if (success) { %>
+                <p style="color: green;">
+                    <%= success %>
+                </p>
+                <% } %>
 
-  <form action="/admin/generate-token" method="POST">
-    <label for="expiresIn">Masa berlaku (detik):</label>
-    <input type="number" name="expiresIn" id="expiresIn" value="86400">
-    <br>
+                    <form action="/admin/generate-token" method="POST">
+                        <label for="expiresIn">Masa berlaku (detik):</label>
+                        <input type="number" name="expiresIn" id="expiresIn" value="86400">
+                        <br>
 
-    <label for="permanent">Buat Token Permanent?</label>
-    <input type="checkbox" name="permanent" id="permanent" value="true">
-    <br>
+                        <label for="permanent">Buat Token Permanent?</label>
+                        <input type="checkbox" name="permanent" id="permanent" value="true">
+                        <br>
 
-    <button type="submit">Generate Token</button>
-  </form>
+                        <button type="submit">Generate Token</button>
+                    </form>
 
-  <br>
-  <a href="/admin/dashboard">Kembali ke Dashboard</a>
+                    <br>
+                    <a href="/admin/dashboard">Kembali ke Dashboard</a>
 
-  <script>
-    document.getElementById("permanent").addEventListener("change", function () {
-      const expiresInput = document.getElementById("expiresIn");
-      if (this.checked) {
-        expiresInput.disabled = true;
-        expiresInput.value = "";
-      } else {
-        expiresInput.disabled = false;
-        expiresInput.value = "86400";
-      }
-    });
-  </script>
+                    <script>
+                        document.getElementById("permanent").addEventListener("change", function () {
+                            const expiresInput = document.getElementById("expiresIn");
+                            if (this.checked) {
+                                expiresInput.disabled = true;
+                                expiresInput.value = "";
+                            } else {
+                                expiresInput.disabled = false;
+                                expiresInput.value = "86400";
+                            }
+                        });
+                    </script>
 </body>
 
 </html>

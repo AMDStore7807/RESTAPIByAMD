@@ -153,7 +153,7 @@
 
             if (!tokenValue) {
                 document.getElementById("staticBackdropLabel").textContent = "PERHATIAN!!!";
-                const modalBody = document.querySelector('#staticBackdrop .modal-body');
+                const modalBody = document.querySelector('#staticBackdrop .modal-dialog .modal-content .modal-body');
                 modalBody.innerHTML = `
       <p><strong>HARAP MASUKKAN TOKEN YANG INGIN DI CEK</strong></p>
     `;
@@ -161,7 +161,6 @@
                 modal.show();
                 return;
             }
-
             // Panggil endpoint pencarian token
             fetch(`/search?token=${encodeURIComponent(tokenValue)}`)
                 .then(response => {
