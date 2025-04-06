@@ -1288,6 +1288,12 @@ app.get("/admin/tokens", isAuthenticated, async (req, res) => {
   res.render("tokens", { tokens: data, error: null });
 });
 
+app.get("/ping", (req, res) => {
+  console.log("🔥 Route /ping berhasil dipanggil");
+  res.send("pong");
+});
+
+
 app.post("/admin/delete-token", isAuthenticated, async (req, res) => {
   const { token } = req.body;
   const success = await tokenManager.deleteToken(token);
